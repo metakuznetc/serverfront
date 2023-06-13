@@ -1,4 +1,3 @@
-import QtQuick.Dialogs
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
@@ -30,7 +29,7 @@ ApplicationWindow {
                 id: button
                 text: "Получить список"
                 onClicked: {
-                    fetchDataFromServerName()
+                    fetchDataFromServerNameWithDelay()
                 }
                 background: Rectangle {
                     color: "#edd29e" // Цвет фона
@@ -101,7 +100,7 @@ ApplicationWindow {
             Button {
                 text: "Открыть модальное окно"
                 onClicked: {
-                    fetchDataFromServerSum()
+                    fetchDataFromServerSumWithDelay()
                 }
                 background: Rectangle {
                     color: "#edd29e" // Цвет фона
@@ -117,22 +116,39 @@ ApplicationWindow {
         }
     }
 
-    Dialog {
-        id: resultDialog
-        title: "Результат"
-        standardButtons: Dialog.Ok
-        contentItem: Text {
-            text: resultLabel.text
-            wrapMode: Text.WordWrap
-        }
-        onAccepted: {
-            resultDialog.visible = false
+    Popup {
+        id: loadingPopup
+        width: 100
+        height: 100
+        modal: true
+        visible: false
+        focus: true
+
+        AnimatedImage {
+            source: "load.gif"
+            width: 100
+            height: 100
+            fillMode: AnimatedImage.PreserveAspectFit
         }
     }
+
+    Dialog {
+            id: resultDialog
+            title: "Результат"
+            standardButtons: Dialog.Ok
+            contentItem: Text {
+                text: resultLabel.text
+                wrapMode: Text.WordWrap
+            }
+            onAccepted: {
+                resultDialog.visible = false
+            }
+        }
 
     function fetchDataFromServerName() {
         var name = nameInput.text;
         var url = "http://localhost:8080/api/v1/managers?name=" + encodeURIComponent(name);
+
         var xhr = new XMLHttpRequest();
         xhr.onreadystatechange = function() {
             if (xhr.readyState === XMLHttpRequest.DONE) {
@@ -151,8 +167,24 @@ ApplicationWindow {
                 }
             }
         };
+
         xhr.open("GET", url);
         xhr.send();
+    }
+
+    function fetchDataFromServerNameWithDelay() {
+        var delay = 3000;
+
+        loadingPopup.visible = true;
+
+        var timer = Qt.createQmlObject('import QtQuick 2.15; Timer {}', loadingPopup);
+        timer.interval = delay;
+        timer.repeat = false;
+        timer.triggered.connect(function() {
+            loadingPopup.visible = false;
+            fetchDataFromServerName();
+        });
+        timer.start();
     }
 
     function fetchDataFromServerSum() {
@@ -175,5 +207,20 @@ ApplicationWindow {
         };
         xhr.open("GET", url, true);
         xhr.send();
+    }
+
+    function fetchDataFromServerSumWithDelay() {
+        var delay = 3000;
+
+        loadingPopup.visible = true;
+
+        var timer = Qt.createQmlObject('import QtQuick 2.15; Timer {}', loadingPopup);
+        timer.interval = delay;
+        timer.repeat = false;
+        timer.triggered.connect(function() {
+            loadingPopup.visible = false;
+            fetchDataFromServerSum();
+        });
+        timer.start();
     }
 }
